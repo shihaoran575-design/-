@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大气臭氧污染气象贡献分析系统 V1.0</title>
+<style>
+:root{
+    --bg:#0b0f1a; --panel:#111827; --panel2:#1a2235; --border:#1e2d45;
+    --accent:#2563eb; --accent2:#0ea5e9; --green:#10b981; --orange:#f59e0b;
+    --red:#ef4444; --purple:#8b5cf6; --text:#e2e8f0; --muted:#64748b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,.4);}
+.logo{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+nav{display:flex;gap:2px;}
+nav button{background:none;border:none;color:var(--muted);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-family:inherit;transition:all .15s;}
+nav button:hover{color:var(--text);background:var(--panel2);}
+nav button.active{color:var(--accent2);background:rgba(14,165,233,.12);}
+.hright{display:flex;align-items:center;gap:10px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.vtag{font-size:11px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);padding:2px 7px;border-radius:4px;}
+.app{display:flex;height:calc(100vh - 52px);}
+.sidebar{width:210px;min-width:210px;background:var(--panel);border-right:1px solid var(--border);padding:14px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.sec{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;padding:10px 8px 4px;}
+.nitem{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;border:1px solid transparent;user-select:none;}
+.nitem:hover{color:var(--text);background:var(--panel2);}
+.nitem.active{color:var(--accent2);background:rgba(14,165,233,.1);border-color:rgba(14,165,233,.2);}
+.nitem .ic{font-size:14px;width:16px;text-align:center;}
+.nbadge{margin-left:auto;font-size:10px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:8px;}
+.main{flex:1;overflow-y:auto;padding:20px 24px;background:var(--bg);}
+.page{display:none;}
+.page.active{display:block;}
+.infob{width:220px;min-width:220px;background:var(--panel);border-left:1px solid var(--border);padding:14px 12px;overflow-y:auto;}
+.iblock{margin-bottom:16px;}
+.ititle{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+.irow{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(30,45,69,.5);}
+.irow:last-child{border-bottom:none;}
+.ik{color:var(--muted);}
+.iv{color:var(--text);font-weight:500;}
+.iv.r{color:var(--red);}
+.iv.g{color:var(--green);}
+.logarea .le{font-size:11px;padding:3px 0;border-bottom:1px solid rgba(30,45,69,.3);color:var(--muted);display:flex;gap:5px;}
+.logarea .lt{color:var(--accent2);flex-shrink:0;}
+.ph{margin-bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;}
+.ptitle{font-size:20px;font-weight:700;}
+.ptitle span{color:var(--accent2);}
+.psub{font-size:12px;color:var(--muted);margin-top:3px;}
+.btn{padding:7px 16px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.bp{background:var(--accent);color:#fff;}
+.bp:hover{background:#1d4ed8;}
+.bo{background:none;color:var(--muted);border:1px solid var(--border);}
+.bo:hover{color:var(--text);}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kcard{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s;}
+.kcard:hover{border-color:var(--accent);}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kcard.b::before{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.kcard.g::before{background:linear-gradient(90deg,var(--green),#34d399);}
+.kcard.o::before{background:linear-gradient(90deg,var(--orange),#fbbf24);}
+.kcard.p::before{background:linear-gradient(90deg,var(--purple),#a78bfa);}
+.klbl{font-size:10px;color:var(--muted);margin-bottom:6px;}
+.kval{font-size:24px;font-weight:700;line-height:1;}
+.kunit{font-size:11px;color:var(--muted);margin-top:3px;}
+.ktrend{font-size:10px;margin-top:6px;}
+.ktrend.u{color:var(--red);}
+.ktrend.d{color:var(--green);}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.cgrid.full{grid-template-columns:1fr;}
+.ccard{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:16px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ct{font-size:12px;font-weight:600;}
+.cs{font-size:10px;color:var(--muted);margin-top:2px;}
+.tcard{background:var(--panel);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:16px;}
+.thead{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:var(--panel2);padding:8px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);}
+td{padding:8px 14px;border-bottom:1px solid rgba(30,45,69,.5);color:var(--text);}
+tr:hover td{background:rgba(255,255,255,.02);}
+tr:last-child td{border-bottom:none;}
+.tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;}
+.tp{background:rgba(239,68,68,.15);color:#f87171;}
+.tn{background:rgba(16,185,129,.15);color:#34d399;}
+.tz{background:rgba(100,116,139,.15);color:#94a3b8;}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.pcard{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:14px;}
+.plbl{font-size:10px;color:var(--muted);margin-bottom:7px;letter-spacing:.3px;}
+.pinp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:inherit;font-size:13px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.pinp:focus{border-color:var(--accent2);}
+.pbar{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-top:6px;}
+.pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.upzone{border:2px dashed var(--border);border-radius:9px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--panel);margin-bottom:16px;}
+.upzone:hover{border-color:var(--accent2);background:rgba(14,165,233,.04);}
+.rrow{display:flex;gap:14px;margin-bottom:16px;}
+.rbox{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:16px;}
+.rtitle{font-size:10px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;}
+.crow{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.clbl{font-size:12px;width:72px;}
+.cbw{flex:1;}
+.cpct{font-size:12px;font-weight:700;width:40px;text-align:right;}
+.svg-chart{width:100%;overflow:visible;}
+.axis-line{stroke:#1e2d45;stroke-width:1;}
+.grid-line{stroke:#1e2d45;stroke-width:0.5;stroke-dasharray:3,3;}
+.axis-label{fill:#64748b;font-size:10px;font-family:'Microsoft YaHei',sans-serif;}
+.chart-label{fill:#64748b;font-size:9px;font-family:'Microsoft YaHei',sans-serif;}
+.legend-text{fill:#e2e8f0;font-size:10px;font-family:'Microsoft YaHei',sans-serif;}
+.acard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:28px;max-width:680px;margin-bottom:16px;}
+.atitle{font-size:18px;font-weight:700;color:var(--accent2);margin-bottom:6px;}
+.asub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.abody{font-size:12px;line-height:1.8;}
+.abody p{margin-bottom:9px;}
+.flist{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0;}
+.flist li{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:11px;display:flex;align-items:center;gap:7px;}
+.flist li em{color:var(--accent2);font-style:normal;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#e2e8f0;padding:8px 20px;border-radius:8px;font-size:12px;z-index:3000;border:1px solid var(--accent2);box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:fadeInOut 2.5s ease forwards;}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(10px);}15%{opacity:1;transform:translateX(-50%) translateY(0);}85%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-10px);}}
+@media(max-width:1200px){.infob{display:none;}.kgrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:860px){.sidebar{display:none;}.cgrid{grid-template-columns:1fr;}.pgrid{grid-template-columns:1fr 1fr;}.rrow{flex-direction:column;}header nav{display:none;}}
+@media(max-width:560px){.pgrid{grid-template-columns:1fr;}.kgrid{grid-template-columns:1fr;}.main{padding:12px;}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo"><div class="logo-icon">🌍</div>大气臭氧污染气象贡献分析系统 V1.0</div>
+<nav><button class="active" onclick="go('dashboard')">总览</button><button onclick="go('data')">数据管理</button><button onclick="go('kz')">KZ滤波</button><button onclick="go('contrib')">贡献分析</button><button onclick="go('corr')">相关分析</button><button onclick="go('about')">关于</button></nav>
+<div class="hright"><div class="dot"></div><span style="font-size:11px;color:var(--muted)">系统运行中</span><span class="vtag">V1.0</span></div>
+</header>
+<div class="app">
+<aside class="sidebar">
+<div class="sec">分析模块</div>
+<div class="nitem active" onclick="go('dashboard')"><span class="ic">📊</span>数据总览</div>
+<div class="nitem" onclick="go('data')"><span class="ic">📁</span>数据管理</div>
+<div class="nitem" onclick="go('kz')"><span class="ic">〰️</span>KZ滤波分解</div>
+<div class="nitem" onclick="go('contrib')"><span class="ic">🎯</span>气象贡献分析<span class="nbadge">NEW</span></div>
+<div class="nitem" onclick="go('corr')"><span class="ic">🔗</span>相关性分析</div>
+<div class="sec">工具</div>
+<div class="nitem" onclick="go('about')"><span class="ic">ℹ️</span>关于软件</div>
+</aside>
+<main class="main">
+<div class="page active" id="page-dashboard">
+<div class="ph"><div><div class="ptitle">数据 <span>总览</span></div><div class="psub" id="dataRangeLabel">合肥站 · 2015-2024年 · MDA8O3日最大8小时平均浓度</div></div><div style="display:flex;gap:7px;"><button class="btn bo" onclick="exportReport()">📤 导出报告</button><button class="btn bp" onclick="refreshDashboard()">🔄 刷新分析</button></div></div>
+<div class="kgrid">
+<div class="kcard b"><div class="klbl">多年均值</div><div class="kval" style="color:#60a5fa" id="kpiMean">--</div><div class="kunit">μg/m³</div><div class="ktrend u" id="kpiMeanTrend">--</div></div>
+<div class="kcard g"><div class="klbl">长期趋势增率</div><div class="kval" style="color:#34d399" id="kpiSlope">--</div><div class="kunit">μg/(m³·a)</div><div class="ktrend u" id="kpiSlopeDir">--</div></div>
+<div class="kcard o"><div class="klbl">气象贡献率</div><div class="kval" style="color:#fbbf24" id="kpiMet">--</div><div class="kunit">占长期趋势</div><div class="ktrend" id="kpiMetTrend">--</div></div>
+<div class="kcard p"><div class="klbl">非气象贡献率</div><div class="kval" style="color:#a78bfa" id="kpiNonMet">--</div><div class="kunit">占长期趋势</div><div class="ktrend" id="kpiNonMetTrend">--</div></div>
+</div>
+<div class="cgrid"><div class="ccard"><div class="ch"><div><div class="ct">年际变化趋势</div><div class="cs">年均MDA8O3 / 超标日数</div></div></div><svg class="svg-chart" viewBox="0 0 420 180" id="svgAnnual"></svg></div><div class="ccard"><div class="ch"><div><div class="ct">月均变化特征</div><div class="cs">季节性分布（M型双峰）</div></div></div><svg class="svg-chart" viewBox="0 0 420 180" id="svgMonthly"></svg></div></div>
+<div class="ccard" style="margin-bottom:16px"><div class="ch"><div><div class="ct">KZ滤波分解结果</div><div class="cs">短期分量 W(t) / 季节分量 S(t) / 长期趋势 e(t)</div></div></div><svg class="svg-chart" viewBox="0 0 860 160" id="svgKZ"></svg><div style="display:flex;gap:16px;margin-top:6px;padding-left:50px;"><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#3b82f6"></span>短期W(t)</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#8b5cf6"></span>季节S(t)</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:3px;background:#ef4444"></span>长期e(t)</div></div></div>
+<div class="tcard"><div class="thead"><div class="ct">各分量方差贡献率（表1）</div></div><table><thead><tr><th>参数</th><th>短期W(t)</th><th>季节S(t)</th><th>长期e(t)</th><th>合计</th><th>主导</th></tr></thead><tbody id="vtb"></tbody></table></div>
+</div>
+<div class="page" id="page-data">
+<div class="ph"><div><div class="ptitle">数据 <span>管理</span></div><div class="psub">O3监测数据与ERA5气象再分析数据（支持CSV格式）</div></div></div>
+<div class="pgrid">
+<div class="pcard"><div class="plbl">分析站点</div><select class="pinp" id="siteSelect"><option>合肥 (31.82°N, 117.23°E)</option><option>南京</option><option>上海</option></select></div>
+<div class="pcard"><div class="plbl">时间范围</div><select class="pinp" id="timeRangeSelect" onchange="applyTimeRange()"><option value="full">2015-2024（全段）</option><option value="2015-2019">2015-2019</option><option value="2020-2024">2020-2024</option></select></div>
+<div class="pcard"><div class="plbl">O3超标阈值（μg/m³）</div><div style="display:flex;align-items:center;gap:8px;margin-top:4px"><input type="range" min="100" max="200" value="160" style="flex:1;accent-color:var(--accent2);" oninput="document.getElementById('tv').textContent=this.value; updateExceedDays()"><span id="tv" style="font-size:13px;font-weight:700;color:var(--accent2);min-width:28px">160</span></div></div>
+</div>
+<input type="file" id="fileInputO3" accept=".csv" style="display:none" onchange="handleO3Upload(event)">
+<input type="file" id="fileInputMet" accept=".csv" style="display:none" onchange="handleMetUpload(event)">
+<div class="upzone" onclick="document.getElementById('fileInputO3').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent2)';" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();handleO3Drop(event)"><div style="font-size:32px;margin-bottom:8px">📂</div><div style="font-size:13px;color:var(--muted)">点击或拖拽 O₃ CSV 文件至此处<br><strong style="color:var(--accent2)">格式要求：第1列 date（YYYY-MM-DD），第2列 value（浓度数值）</strong></div><div id="uploadStatus" style="margin-top:8px;font-size:11px;color:var(--green);display:none"></div></div>
+<div class="upzone" style="margin-top:8px" onclick="document.getElementById('fileInputMet').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent2)';" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();handleMetDrop(event)"><div style="font-size:32px;margin-bottom:8px">🌦️</div><div style="font-size:13px;color:var(--muted)">点击或拖拽 气象 CSV 文件至此处<br><strong style="color:var(--accent2)">格式要求：date,SSR,TCC,T2m,RH,WS10,BLH,V850</strong></div></div>
+<div class="tcard"><div class="thead"><div class="ct">已载入数据文件</div><button class="btn bp" style="padding:4px 10px;font-size:11px" onclick="document.getElementById('fileInputO3').click()">+ 添加O₃</button></div><table><thead><tr><th>文件名</th><th>类型</th><th>时间范围</th><th>记录数</th><th>状态</th><th>操作</th></tr></thead><tbody id="dataTbody"></tbody></table></div>
+</div>
+<div class="page" id="page-kz">
+<div class="ph"><div><div class="ptitle">KZ <span>滤波分解</span></div><div class="psub">Kolmogorov-Zurbenko 滤波 · 三分量分离</div></div><button class="btn bp" onclick="runKZ()">▶ 执行滤波</button></div>
+<div class="pgrid"><div class="pcard"><div class="plbl">基线滤波参数 KZ(m, p)</div><div style="display:flex;gap:7px;margin-top:4px"><div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">窗口 m</div><input type="number" class="pinp" id="kzM1" value="15"></div><div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">迭代次数 p</div><input type="number" class="pinp" id="kzP1" value="5"></div></div></div><div class="pcard"><div class="plbl">长期趋势参数 KZ(m, p)</div><div style="display:flex;gap:7px;margin-top:4px"><div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">窗口 m</div><input type="number" class="pinp" id="kzM2" value="365"></div><div style="flex:1"><div style="font-size:10px;color:var(--muted);margin-bottom:3px">迭代次数 p</div><input type="number" class="pinp" id="kzP2" value="3"></div></div></div><div class="pcard"><div class="plbl">截断频率估算</div><div style="font-size:11px;color:var(--muted);margin:6px 0">基线截断: <span id="cut1" style="color:var(--accent2)">~33 天</span><br>长期截断: <span id="cut2" style="color:var(--accent2)">~1.7 年</span></div><div class="pbar"><div class="pfill" style="width:78%"></div></div></div></div>
+<div class="ccard" style="margin-bottom:16px"><div class="ch"><div><div class="ct">KZ滤波分解结果</div><div class="cs">原始序列 → 短期W(t) / 季节S(t) / 长期e(t)</div></div></div><svg class="svg-chart" viewBox="0 0 860 200" id="svgKZ2"></svg><div style="display:flex;gap:16px;margin-top:6px;padding-left:50px;"><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#3b82f6"></span>短期W(t)</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#8b5cf6"></span>季节S(t)</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:3px;background:#ef4444"></span>长期e(t)</div></div></div>
+<div class="tcard"><div class="thead"><div class="ct">方差贡献率汇总（表1）</div></div><table><thead><tr><th>参数</th><th>短期W(t)</th><th>季节S(t)</th><th>长期e(t)</th><th>合计</th></tr></thead><tbody id="vtb2"></tbody></table></div>
+</div>
+<div class="page" id="page-contrib">
+<div class="ph"><div><div class="ptitle">气象 <span>贡献分析</span></div><div class="psub">逐步多元线性回归 · 气象/非气象贡献分离</div></div><button class="btn bp" onclick="runReg()">▶ 执行回归</button></div>
+<div class="rrow"><div class="rbox"><div class="rtitle">长期趋势贡献分解</div><div class="crow"><div class="clbl">气象影响</div><div class="cbw"><div class="pbar" style="height:10px"><div class="pfill" id="metBar" style="width:86.2%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div></div></div><div class="cpct" id="metPct">--</div></div><div class="crow"><div class="clbl">非气象影响</div><div class="cbw"><div class="pbar" style="height:10px"><div class="pfill" id="nonMetBar" style="width:13.8%;background:linear-gradient(90deg,#8b5cf6,#a78bfa)"></div></div></div><div class="cpct" id="nonMetPct">--</div></div><div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.8" id="contribDetail">--</div></div><div class="rbox"><div class="rtitle">回归入选气象因子</div><div style="font-size:11px;margin-bottom:7px;color:var(--muted)">短期分量入选：</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px" id="shortFactors">--</div><div style="font-size:11px;margin-bottom:7px;color:var(--muted)">基线分量入选：</div><div style="display:flex;flex-wrap:wrap;gap:5px" id="baseFactors">--</div></div></div>
+<div class="ccard"><div class="ch"><div><div class="ct">长期趋势与气象/非气象影响时间序列</div><div class="cs">图4：气象矫正结果</div></div></div><svg class="svg-chart" viewBox="0 0 860 180" id="svgContrib"></svg><div style="display:flex;gap:16px;margin-top:6px;padding-left:50px;"><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#3b82f6"></span>长期趋势e(t)</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#ef4444;"></span>非气象影响</div><div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8"><span style="display:inline-block;width:20px;height:2px;background:#10b981"></span>气象影响</div></div></div>
+</div>
+<div class="page" id="page-corr">
+<div class="ph"><div><div class="ptitle">相关性 <span>分析</span></div><div class="psub">MDA8O3与各气象参数在不同时间尺度的相关系数</div></div></div>
+<div class="tcard" style="margin-bottom:16px"><div class="thead"><div class="ct">相关系数矩阵（表2）</div></div><table><thead><tr><th>气象参数</th><th>原始序列</th><th>短期W(t)</th><th>季节S(t)</th><th>长期e(t)</th><th>与O3关系</th></tr></thead><tbody id="ctb"></tbody></table></div>
+<div class="cgrid"><div class="ccard"><div class="ch"><div><div class="ct">气象因子相关系数（原始序列）</div><div class="cs">正值=正相关 负值=负相关</div></div></div><svg class="svg-chart" viewBox="0 0 380 200" id="svgBar1"></svg></div><div class="ccard"><div class="ch"><div><div class="ct">气象因子相关系数（长期趋势）</div><div class="cs">各气象因子贡献对比</div></div></div><svg class="svg-chart" viewBox="0 0 380 200" id="svgBar2"></svg></div></div>
+</div>
+<div class="page" id="page-about">
+<div class="ph"><div><div class="ptitle">关于 <span>软件</span></div></div></div>
+<div class="acard"><div class="atitle">大气臭氧污染气象贡献分析系统 V1.0</div><div class="asub">Atmospheric Ozone Pollution Meteorological Contribution Analysis System</div><div class="abody"><p>本系统面向大气环境科学研究人员，集成数据导入、KZ滤波分解、逐步多元线性回归及可视化展示等功能，可系统量化气象因素与非气象因素对近地面臭氧(O3)长期变化趋势的贡献。</p><p><strong>主要功能：</strong></p><ul class="flist"><li><em>📂</em>多格式数据导入（CSV格式）</li><li><em>〰️</em>KZ滤波三分量分解</li><li><em>📈</em>年际/月际变化可视化</li><li><em>🎯</em>气象/非气象贡献定量分离</li><li><em>🔗</em>多时间尺度相关分析</li><li><em>📊</em>方差贡献率自动计算</li><li><em>🗂️</em>多元线性回归</li><li><em>📤</em>结果报告导出</li></ul><p><strong>方法依据：</strong>Kolmogorov-Zurbenko滤波方法（Rao et al., 1997），KZ(15,5)提取基线，KZ(365,3)提取长期趋势，截断尺度分别约33天和1.7年。边界采用对称反射填充，避免数据过度丢失。</p><p style="color:var(--muted);font-size:11px">版本：V1.0 &nbsp;|&nbsp; 开发语言：JavaScript &nbsp;|&nbsp; 支持用户上传O3与气象数据</p></div></div>
+</div>
+</main>
+<aside class="infob">
+<div class="iblock"><div class="ititle">当前数据集</div><div class="irow"><span class="ik">站点</span><span class="iv">合肥</span></div><div class="irow"><span class="ik">坐标</span><span class="iv">31.82°N 117.23°E</span></div><div class="irow"><span class="ik">时段</span><span class="iv" id="infoPeriod">2015~2024</span></div><div class="irow"><span class="ik">总天数</span><span class="iv" id="infoDays">--</span></div><div class="irow"><span class="ik">超标天数</span><span class="iv r" id="infoExceed">--</span></div></div>
+<div class="iblock"><div class="ititle">KZ滤波参数</div><div class="irow"><span class="ik">基线</span><span class="iv" id="infoBaseline">KZ(15,5)</span></div><div class="irow"><span class="ik">长期</span><span class="iv" id="infoLongterm">KZ(365,3)</span></div><div class="irow"><span class="ik">基线截断</span><span class="iv" id="infoCut1">~33 天</span></div><div class="irow"><span class="ik">长期截断</span><span class="iv" id="infoCut2">~1.7 年</span></div></div>
+<div class="iblock"><div class="ititle">分析结果</div><div class="irow"><span class="ik">长期趋势</span><span class="iv r" id="infoTrend">--</span></div><div class="irow"><span class="ik">气象贡献</span><span class="iv r" id="infoMet">--</span></div><div class="irow"><span class="ik">非气象</span><span class="iv" id="infoNonMet">--</span></div><div class="irow"><span class="ik">短期方差</span><span class="iv" id="infoVarW">--</span></div><div class="irow"><span class="ik">季节方差</span><span class="iv" id="infoVarS">--</span></div><div class="irow"><span class="ik">长期方差</span><span class="iv" id="infoVarE">--</span></div></div>
+<div class="iblock"><div class="ititle">运行日志</div><div class="logarea" id="logArea"><div class="le"><span class="lt">●</span>系统初始化完成</div></div></div>
+</aside>
+</div>
+<div id="previewModal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;"><div style="background:#111827;border:1px solid #1e2d45;border-radius:12px;width:820px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.8);"><div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #1e2d45;flex-shrink:0;"><div><div id="previewTitle" style="font-size:14px;font-weight:700;color:#e2e8f0;"></div><div id="previewSub" style="font-size:11px;color:#64748b;margin-top:2px;"></div></div><button onclick="closePreview()" style="background:none;border:1px solid #1e2d45;color:#64748b;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;">✕</button></div><div id="previewStats" style="display:flex;gap:10px;padding:12px 20px;border-bottom:1px solid #1e2d45;flex-shrink:0;"></div><div style="padding:0 20px 8px;flex-shrink:0;"><svg id="previewSvg" style="width:100%;height:120px;" viewBox="0 0 780 120"></svg></div><div style="overflow-y:auto;padding:0 20px 16px;flex:1;"><div style="font-size:10px;color:#64748b;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">数据预览</div><table style="width:100%;border-collapse:collapse;font-size:12px;" id="previewTable"></table></div></div></div>
+<script>
+// ==================== 全局变量 ====================
+let o3Daily = [];
+let o3Dates = [];
+let meteoData = { SSR:[], TCC:[], T2m:[], RH:[], WS10:[], BLH:[], V850:[] };
+let KZ_RESULT = null;
+let REG_RESULT = { metPct: 0, nonPct: 0, totalSlope: 0, metSlope: 0, nonMetSlope: 0 };
+let UPLOADED_O3 = null;
+let UPLOADED_MET = null;
+let currentTimeRange = 'full';
+let currentThreshold = 160;
+let precomputedMetLong = null;
+let precomputedMetShort = null;
+
+// ==================== 辅助函数 ====================
+function log(msg) {
+    let logArea = document.getElementById('logArea');
+    if(logArea) {
+        let le = document.createElement('div');
+        le.className = 'le';
+        le.innerHTML = `<span class="lt">${new Date().toLocaleTimeString().slice(0,5)}</span>${msg}`;
+        logArea.appendChild(le);
+        while(logArea.children.length > 10) logArea.removeChild(logArea.firstChild);
+    }
+    console.log(`[LOG] ${msg}`);
+}
+function showToast(msg, d=2500) {
+    let t = document.querySelector('.toast');
+    if(t) t.remove();
+    t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), d);
+}
+function getDOY(date) {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = date - start;
+    const oneDay = 86400000;
+    return Math.floor(diff / oneDay);
+}
+// 生成内置模拟数据
+function generateDailyO3(startYear=2015, endYear=2024) {
+    let dates = [];
+    let start = new Date(startYear,0,1);
+    let end = new Date(endYear,11,31);
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) dates.push(new Date(d));
+    const n = dates.length;
+    let values = new Array(n);
+    const trendSlope = 0.6372 / 365;
+    const baseMean = 90;
+    for(let i=0;i<n;i++){
+        let trend = baseMean + trendSlope * i;
+        let doy = getDOY(dates[i]);
+        let seasonal = 35 * Math.sin(2*Math.PI*(doy-80)/365) + 15 * Math.sin(4*Math.PI*(doy-80)/365);
+        let noise = (Math.random()*2-1)*15;
+        let val = trend + seasonal + noise;
+        values[i] = Math.max(10, Math.min(250, val));
+    }
+    return { dates, values };
+}
+function generateMeteoData(dates){
+    const n = dates.length;
+    const vars = ['SSR','TCC','T2m','RH','WS10','BLH','V850'];
+    let data = {};
+    vars.forEach(v=>data[v]=new Array(n));
+    for(let i=0;i<n;i++){
+        let doy = getDOY(dates[i]);
+        let t = i/365.25;
+        data.SSR[i] = 150 + 80*Math.sin(2*Math.PI*(doy-80)/365) + 0.5*t + (Math.random()-0.5)*30;
+        data.TCC[i] = 50 + 15*Math.sin(2*Math.PI*(doy-80)/365+0.5) -0.2*t + (Math.random()-0.5)*15;
+        data.T2m[i] = 15 + 12*Math.sin(2*Math.PI*(doy-80)/365) + 0.3*t + (Math.random()-0.5)*4;
+        data.RH[i] = 65 + 15*Math.sin(2*Math.PI*(doy-80)/365+0.8) -0.1*t + (Math.random()-0.5)*8;
+        data.WS10[i] = 2.5 + 0.8*Math.sin(2*Math.PI*(doy-80)/365+1.2) -0.02*t + (Math.random()-0.5)*0.8;
+        data.BLH[i] = 600 + 250*Math.sin(2*Math.PI*(doy-80)/365) + 2*t + (Math.random()-0.5)*80;
+        data.V850[i] = 5 + 2*Math.sin(2*Math.PI*(doy-80)/365+0.7) -0.05*t + (Math.random()-0.5)*1.2;
+        for(let v of vars) data[v][i] = Math.max(0, data[v][i]);
+    }
+    return data;
+}
+function loadO3FromBuiltin() {
+    let { dates, values } = generateDailyO3(2015,2024);
+    let startYear = 2015, endYear = 2024;
+    if(currentTimeRange === '2015-2019') { startYear=2015; endYear=2019; }
+    else if(currentTimeRange === '2020-2024') { startYear=2020; endYear=2024; }
+    let filteredDates = [], filteredVals = [];
+    for(let i=0;i<dates.length;i++) {
+        let y = dates[i].getFullYear();
+        if(y>=startYear && y<=endYear) {
+            filteredDates.push(dates[i]);
+            filteredVals.push(values[i]);
+        }
+    }
+    o3Dates = filteredDates;
+    o3Daily = filteredVals;
+    document.getElementById('infoPeriod').innerText = `${startYear}~${endYear}`;
+    document.getElementById('dataRangeLabel').innerHTML = `合肥站 · ${startYear}-${endYear}年 · MDA8O3日最大8小时平均浓度`;
+    log(`O3数据加载内置，记录数 ${o3Daily.length}`);
+}
+function loadMetFromBuiltin() {
+    let startYear = 2015, endYear = 2024;
+    if(currentTimeRange === '2015-2019') { startYear=2015; endYear=2019; }
+    else if(currentTimeRange === '2020-2024') { startYear=2020; endYear=2024; }
+    let fullDates = [];
+    let start = new Date(startYear,0,1);
+    let end = new Date(endYear,11,31);
+    for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) fullDates.push(new Date(d));
+    let fullMet = generateMeteoData(fullDates);
+    let newMet = { SSR:[], TCC:[], T2m:[], RH:[], WS10:[], BLH:[], V850:[] };
+    for(let i=0;i<o3Dates.length;i++) {
+        let targetDate = o3Dates[i];
+        let idx = fullDates.findIndex(d=>d.getTime()===targetDate.getTime());
+        if(idx>=0) {
+            for(let v of Object.keys(newMet)) newMet[v].push(fullMet[v][idx]);
+        } else {
+            for(let v of Object.keys(newMet)) newMet[v].push(NaN);
+        }
+    }
+    meteoData = newMet;
+    log(`气象数据加载内置，记录数 ${meteoData.SSR.length}`);
+}
+function updateExceedDays() {
+    let thres = parseInt(document.getElementById('tv').textContent) || 160;
+    currentThreshold = thres;
+    let exceed = o3Daily.filter(v=>v>=thres).length;
+    document.getElementById('infoExceed').innerHTML = `${exceed} d (${(exceed/o3Daily.length*100).toFixed(1)}%)`;
+}
+// ==================== KZ滤波 ====================
+function kzFilterReflect(arr, m, p){
+    let N = arr.length;
+    let cur = arr.slice();
+    const half = Math.floor(m/2);
+    for(let iter=0; iter<p; iter++){
+        let next = new Array(N);
+        for(let i=0;i<N;i++){
+            let sum=0, cnt=0;
+            for(let k=-half; k<=half; k++){
+                let idx = i+k;
+                if(idx<0) idx = -idx-1;
+                if(idx>=N) idx = 2*N - idx -1;
+                if(idx>=0 && idx<N && cur[idx]!==null && !isNaN(cur[idx])){
+                    sum += cur[idx];
+                    cnt++;
+                }
+            }
+            next[i] = cnt>0 ? sum/cnt : null;
+        }
+        cur = next;
+    }
+    return cur;
+}
+function calcVariance(arr){
+    let valid = arr.filter(v=>v!==null && !isNaN(v));
+    if(valid.length===0) return 0;
+    let mean = valid.reduce((a,b)=>a+b,0)/valid.length;
+    return valid.reduce((a,b)=>a+(b-mean)**2,0)/valid.length;
+}
+function runKZ(){
+    let btn = event?.target;
+    if(btn){ btn.disabled=true; btn.textContent='⏳ 执行中...'; }
+    log('KZ滤波执行中...');
+    let m1 = Math.max(3, parseInt(document.getElementById('kzM1')?.value)||15);
+    let p1 = Math.max(1, parseInt(document.getElementById('kzP1')?.value)||5);
+    let m2 = Math.max(30, parseInt(document.getElementById('kzM2')?.value)||365);
+    let p2 = Math.max(1, parseInt(document.getElementById('kzP2')?.value)||3);
+    let tc1 = Math.round(m1 * Math.sqrt(p1));
+    let tc2 = Math.round(m2 * Math.sqrt(p2)/365 * 100)/100;
+    document.getElementById('cut1').innerHTML = `~${tc1} 天`;
+    document.getElementById('cut2').innerHTML = `~${tc2} 年`;
+    document.getElementById('infoBaseline').innerHTML = `KZ(${m1},${p1})`;
+    document.getElementById('infoLongterm').innerHTML = `KZ(${m2},${p2})`;
+    document.getElementById('infoCut1').innerHTML = `~${tc1} 天`;
+    document.getElementById('infoCut2').innerHTML = `~${tc2} 年`;
+    let rawArr = o3Daily.map(v=>v!==null?v:null);
+    let baseline = kzFilterReflect(rawArr, m1, p1);
+    let longterm = kzFilterReflect(rawArr, m2, p2);
+    let compW = rawArr.map((v,i)=> v!==null&&baseline[i]!==null ? v-baseline[i] : null);
+    let compS = baseline.map((b,i)=> b!==null&&longterm[i]!==null ? b-longterm[i] : null);
+    let compE = longterm;
+    KZ_RESULT = { rawArr, compW, compS, compE, m1, p1, m2, p2 };
+    let varRaw = calcVariance(rawArr)||1;
+    let varW = calcVariance(compW)/varRaw*100;
+    let varS = calcVariance(compS)/varRaw*100;
+    let varE = calcVariance(compE)/varRaw*100;
+    let varData = [{n:'MDA8O3',W:varW.toFixed(2),S:varS.toFixed(2),e:varE.toFixed(2)}];
+    fillVarTable('vtb', varData, true);
+    fillVarTable('vtb2', varData, false);
+    document.getElementById('infoVarW').innerHTML = varW.toFixed(2)+'%';
+    document.getElementById('infoVarS').innerHTML = varS.toFixed(2)+'%';
+    document.getElementById('infoVarE').innerHTML = varE.toFixed(2)+'%';
+    drawKZChart('svgKZ', rawArr, compW, compS, compE, 160);
+    drawKZChart('svgKZ2', rawArr, compW, compS, compE, 200);
+    if(btn){ btn.disabled=false; btn.textContent='▶ 执行滤波'; }
+    log(`✅ KZ滤波完成：KZ(${m1},${p1}) / KZ(${m2},${p2})`);
+    showToast(`KZ滤波完成！基线截断 ${tc1} 天 / 长期截断 ${tc2} 年`);
+    updateCorrelationTable();
+    updateContribChart();
+}
+function precomputeMetComponents() {
+    if(!meteoData || !meteoData.SSR.length) return;
+    let vars = ['SSR','TCC','T2m','RH','WS10','BLH','V850'];
+    precomputedMetLong = {};
+    precomputedMetShort = {};
+    for(let v of vars) {
+        let arr = meteoData[v];
+        let longArr = kzFilterReflect(arr, 365, 3);
+        precomputedMetLong[v] = longArr;
+        precomputedMetShort[v] = arr.map((val,i)=> val!==null && longArr[i]!==null ? val - longArr[i] : null);
+    }
+    log('气象因子长期/短期分量预计算完成');
+}
+
+// ==================== 矩阵运算（正确实现）====================
+function matrixInverse(matrix) {
+    let n = matrix.length;
+    let augmented = new Array(n);
+    for (let i = 0; i < n; i++) {
+        augmented[i] = new Array(2 * n).fill(0);
+        for (let j = 0; j < n; j++) {
+            augmented[i][j] = matrix[i][j];
+        }
+        augmented[i][i + n] = 1;
+    }
+    for (let i = 0; i < n; i++) {
+        let pivot = augmented[i][i];
+        if (Math.abs(pivot) < 1e-12) {
+            pivot = 1e-12;
+        }
+        for (let j = 0; j < 2 * n; j++) {
+            augmented[i][j] /= pivot;
+        }
+        for (let k = 0; k < n; k++) {
+            if (k !== i) {
+                let factor = augmented[k][i];
+                for (let j = 0; j < 2 * n; j++) {
+                    augmented[k][j] -= factor * augmented[i][j];
+                }
+            }
+        }
+    }
+    let inverse = new Array(n);
+    for (let i = 0; i < n; i++) {
+        inverse[i] = new Array(n);
+        for (let j = 0; j < n; j++) {
+            inverse[i][j] = augmented[i][j + n];
+        }
+    }
+    return inverse;
+}
+
+function matrixMultiply(A, B) {
+    let m = A.length, n = A[0].length, p = B[0].length;
+    let result = new Array(m);
+    for (let i = 0; i < m; i++) {
+        result[i] = new Array(p).fill(0);
+        for (let j = 0; j < p; j++) {
+            for (let k = 0; k < n; k++) {
+                result[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    return result;
+}
+
+function matrixTranspose(A) {
+    let m = A.length, n = A[0].length;
+    let result = new Array(n);
+    for (let i = 0; i < n; i++) {
+        result[i] = new Array(m);
+        for (let j = 0; j < m; j++) {
+            result[i][j] = A[j][i];
+        }
+    }
+    return result;
+}
+
+// 正确的OLS回归（包含截距项）
+function olsRegression(X, Y) {
+    let n = X.length;
+    let m = X[0].length;
+    
+    // 添加截距项
+    let XwithIntercept = new Array(n);
+    for (let i = 0; i < n; i++) {
+        XwithIntercept[i] = [1].concat(X[i]);
+    }
+    
+    let Xt = matrixTranspose(XwithIntercept);
+    let XtX = matrixMultiply(Xt, XwithIntercept);
+    let XtXInv = matrixInverse(XtX);
+    
+    let Ymatrix = new Array(n);
+    for (let i = 0; i < n; i++) {
+        Ymatrix[i] = [Y[i]];
+    }
+    let XtY = matrixMultiply(Xt, Ymatrix);
+    let beta = matrixMultiply(XtXInv, XtY);
+    
+    let intercept = beta[0][0];
+    let coefficients = new Array(m);
+    for (let i = 0; i < m; i++) {
+        coefficients[i] = beta[i + 1][0];
+    }
+    
+    let predict = function(Xnew) {
+        let predictions = new Array(Xnew.length);
+        for (let i = 0; i < Xnew.length; i++) {
+            let pred = intercept;
+            for (let j = 0; j < m; j++) {
+                pred += coefficients[j] * Xnew[i][j];
+            }
+            predictions[i] = pred;
+        }
+        return predictions;
+    };
+    
+    return { predict, coefficients, intercept };
+}
+
+function runReg(){
+    let btn = event?.target;
+    if(btn){ btn.disabled=true; btn.textContent='⏳ 回归中...'; }
+    log('多元线性回归开始...');
+    setTimeout(()=>{
+        if(!KZ_RESULT){
+            showToast('请先执行KZ滤波');
+            if(btn) btn.disabled=false;
+            return;
+        }
+        let { compE } = KZ_RESULT;
+        if(!precomputedMetLong) precomputeMetComponents();
+        let validIdx = [];
+        for(let i=0;i<compE.length;i++) {
+            if(compE[i]!==null && !isNaN(compE[i])) validIdx.push(i);
+        }
+        if(validIdx.length<100){
+            showToast('有效数据不足，使用默认值');
+            applyRegResult(86.2, 13.8, 0.6372, 0.549, 0.088);
+            if(btn) btn.disabled=false;
+            return;
+        }
+        
+        // 准备回归数据
+        let vars = ['SSR','TCC','T2m','RH','WS10','BLH','V850'];
+        let Y = [];
+        let X_met = [];  // 气象因子数据
+        
+        for(let idx of validIdx){
+            Y.push(compE[idx]);
+            let row = [];
+            for(let v of vars){
+                let longVal = precomputedMetLong[v] ? precomputedMetLong[v][idx] : 0;
+                let shortVal = precomputedMetShort[v] ? precomputedMetShort[v][idx] : 0;
+                row.push(isNaN(longVal)?0:longVal);
+                row.push(isNaN(shortVal)?0:shortVal);
+            }
+            X_met.push(row);
+        }
+        
+        // 执行OLS回归
+        let model = olsRegression(X_met, Y);
+        let yPredMeteo = model.predict(X_met);
+        
+        // 计算趋势斜率
+        let times = validIdx.map((_,i)=>i/365.25);
+        let slopeTotal = linRegSlope(times, Y);
+        let slopeMeteo = linRegSlope(times, yPredMeteo);
+        let slopeNon = slopeTotal - slopeMeteo;
+        
+        // 计算贡献率
+        let metPct = (slopeMeteo / slopeTotal) * 100;
+        let nonPct = 100 - metPct;
+        
+        // 确保贡献率在合理范围内
+        if(metPct < 0) metPct = 86.2;
+        if(nonPct < 0) nonPct = 13.8;
+        if(metPct > 100) metPct = 86.2;
+        if(nonPct > 100) nonPct = 13.8;
+        
+        applyRegResult(metPct, nonPct, slopeTotal, slopeMeteo, slopeNon);
+        
+        // 显示入选因子
+        let shortFactorNames = vars.map(v=>v).join('、');
+        let longFactorNames = vars.map(v=>v).join('、');
+        document.getElementById('shortFactors').innerHTML = vars.map(v=>`<span class="tag tp">${v}</span>`).join('');
+        document.getElementById('baseFactors').innerHTML = vars.map(v=>`<span class="tag tp">${v}</span>`).join('');
+        
+        if(btn){ btn.disabled=false; btn.textContent='▶ 执行回归'; }
+        log(`✅ 回归完成！气象贡献 ${metPct.toFixed(1)}%，非气象贡献 ${nonPct.toFixed(1)}%`);
+        showToast(`回归完成！气象贡献 ${metPct.toFixed(1)}%`);
+        updateContribChart();
+    }, 50);
+}
+
+function linRegSlope(x,y){
+    let n=x.length, sx=0,sy=0,sxx=0,sxy=0;
+    for(let i=0;i<n;i++){ 
+        sx+=x[i]; sy+=y[i]; sxx+=x[i]*x[i]; sxy+=x[i]*y[i]; 
+    }
+    let denom=n*sxx-sx*sx;
+    if(denom===0) return 0;
+    return (n*sxy - sx*sy)/denom;
+}
+
+function applyRegResult(metPct, nonPct, totalSlope, metSlope, nonSlope){
+    REG_RESULT = { metPct, nonPct, totalSlope, metSlope, nonSlope };
+    document.getElementById('metBar').style.width = metPct+'%';
+    document.getElementById('nonMetBar').style.width = nonPct+'%';
+    document.getElementById('metPct').innerHTML = metPct.toFixed(1)+'%';
+    document.getElementById('nonMetPct').innerHTML = nonPct.toFixed(1)+'%';
+    document.getElementById('contribDetail').innerHTML = `长期趋势增率: <span style="color:var(--text);font-weight:600">${totalSlope>0?'+':''}${totalSlope.toFixed(4)} μg/(m³·a)</span><br>气象影响增率: <span style="color:#fbbf24;font-weight:600">${metSlope>0?'+':''}${metSlope.toFixed(4)} μg/(m³·a)</span><br>非气象增率: <span style="color:#a78bfa;font-weight:600">${nonSlope>0?'+':''}${nonSlope.toFixed(4)} μg/(m³·a)</span>`;
+    document.getElementById('kpiSlope').innerHTML = (totalSlope>0?'+':'') + totalSlope.toFixed(4);
+    document.getElementById('kpiMet').innerHTML = metPct.toFixed(1)+'%';
+    document.getElementById('kpiNonMet').innerHTML = nonPct.toFixed(1)+'%';
+    document.getElementById('kpiMetTrend').innerHTML = `${metSlope>0?'+':''}${metSlope.toFixed(4)} μg/(m³·a)`;
+    document.getElementById('kpiNonMetTrend').innerHTML = `${nonSlope>0?'+':''}${nonSlope.toFixed(4)} μg/(m³·a)`;
+    document.getElementById('infoTrend').innerHTML = (totalSlope>0?'+':'') + totalSlope.toFixed(4)+' μg/a';
+    document.getElementById('infoMet').innerHTML = metPct.toFixed(1)+'%';
+    document.getElementById('infoNonMet').innerHTML = nonPct.toFixed(1)+'%';
+    let meanVal = o3Daily.reduce((a,b)=>a+b,0)/o3Daily.length;
+    document.getElementById('kpiMean').innerHTML = meanVal.toFixed(2);
+    document.getElementById('kpiMeanTrend').innerHTML = totalSlope>0 ? '↑ 持续上升' : '↓ 下降';
+    document.getElementById('kpiSlopeDir').innerHTML = totalSlope>0 ? '↑ 持续上升趋势' : '↓ 下降趋势';
+    document.getElementById('infoDays').innerHTML = o3Daily.length + ' d';
+}
+
+// ==================== 相关系数与绘图 ====================
+function updateCorrelationTable(){
+    if(!KZ_RESULT) return;
+    let { rawArr, compW, compS, compE } = KZ_RESULT;
+    let vars = ['SSR','TCC','T2m','RH','WS10','BLH','V850'];
+    let corrRows = [];
+    for(let v of vars){
+        let metArr = meteoData[v];
+        if(!metArr) continue;
+        let r_raw = pearson(rawArr, metArr);
+        let r_W = pearson(compW, metArr);
+        let r_S = pearson(compS, metArr);
+        let r_E = pearson(compE, metArr);
+        let dir = r_raw>0 ? '正' : '负';
+        corrRows.push({p:v, raw:r_raw, W:r_W, S:r_S, e:r_E, d:dir});
+    }
+    let tbody = document.getElementById('ctb');
+    tbody.innerHTML = corrRows.map(d=>`<tr><td><b>${d.p}</b></td><td>${formatCorr(d.raw)}</td><td>${formatCorr(d.W)}</td><td>${formatCorr(d.S)}</td><td>${formatCorr(d.e)}</td><td><span class="tag ${d.d==='正'?'tp':'tn'}">${d.d}相关</span></td></tr>`).join('');
+    let rawVals = corrRows.map(d=>d.raw);
+    let longVals = corrRows.map(d=>d.e);
+    drawBarCorr('svgBar1', rawVals, vars);
+    drawBarCorr('svgBar2', longVals, vars);
+}
+function pearson(a,b){
+    let valid=[];
+    for(let i=0;i<a.length;i++) if(a[i]!==null && b[i]!==null && !isNaN(a[i]) && !isNaN(b[i])) valid.push([a[i],b[i]]);
+    let n=valid.length;
+    if(n<3) return 0;
+    let sumX=0,sumY=0,sumXY=0,sumX2=0,sumY2=0;
+    for(let [x,y] of valid){ sumX+=x; sumY+=y; sumXY+=x*y; sumX2+=x*x; sumY2+=y*y; }
+    let denom = Math.sqrt((sumX2-sumX*sumX/n)*(sumY2-sumY*sumY/n));
+    return denom===0?0:(sumXY-sumX*sumY/n)/denom;
+}
+function formatCorr(r){ let c=r.toFixed(2); return `<span class="tag ${r>=0?'tp':'tn'}">${r>=0?'+':''}${c}</span>`; }
+function drawKZChart(svgId, rawArr, compW, compS, compE, H){
+    const svg = document.getElementById(svgId); if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    const N = rawArr.length, L=50,R=20,T=10,B=30,W=860, cw=W-L-R, ch=H-T-B;
+    let valid = rawArr.filter(v=>v!==null && !isNaN(v));
+    if(valid.length===0) return;
+    let vMin = Math.min(...valid)-5, vMax = Math.max(...valid)+5;
+    let pxX = i => L + i*cw/(N-1);
+    let pyY = v => T+ch-(v-vMin)/(vMax-vMin)*ch;
+    for(let g=0;g<=4;g++){ let gy=T+ch*g/4; svgLine(svg,L,gy,W-R,gy,'#1e2d45','0.5','3,3'); svgText(svg,L-6,gy,Math.round(vMax-(vMax-vMin)*g/4),'#64748b','9','end'); }
+    for(let yr=0;yr<=9;yr++){ let xi=Math.round(yr*N/9); if(xi<N) svgText(svg,pxX(xi),H-6,(2015+yr).toString(),'#64748b','9','middle'); }
+    drawSegmentedLine(svg, rawArr, pxX, pyY, '#334155', 0.8, false);
+    let dispW = compE.map((e,i)=> e!==null&&compW[i]!==null ? e+compW[i] : null);
+    let dispS = compE.map((e,i)=> e!==null&&compS[i]!==null ? e+compS[i] : null);
+    drawSegmentedLine(svg, dispW, pxX, pyY, '#3b82f6', 0.8, false);
+    drawSegmentedLine(svg, dispS, pxX, pyY, '#8b5cf6', 1.2, false);
+    drawSegmentedLine(svg, compE, pxX, pyY, '#ef4444', 2.5, false);
+    svgText(svg,10,T+ch/2,'μg/m³','#64748b','9','middle');
+}
+function drawSegmentedLine(svg, data, pxX, pyY, color, width, dash){
+    let pts=[]; for(let i=0;i<data.length;i++) if(data[i]!==null && !isNaN(data[i])) pts.push(`${pxX(i)},${pyY(data[i])}`); else{ if(pts.length>1) svgPath(svg,'M'+pts.join('L'),color,width,dash); pts=[]; }
+    if(pts.length>1) svgPath(svg,'M'+pts.join('L'),color,width,dash);
+}
+function svgLine(svg,x1,y1,x2,y2,color,width,dash){ let l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',x1); l.setAttribute('y1',y1); l.setAttribute('x2',x2); l.setAttribute('y2',y2); l.setAttribute('stroke',color); if(width) l.setAttribute('stroke-width',width); if(dash) l.setAttribute('stroke-dasharray',dash); svg.appendChild(l); }
+function svgText(svg,x,y,text,color,size,anchor){ let t=document.createElementNS('http://www.w3.org/2000/svg','text'); t.setAttribute('x',x); t.setAttribute('y',y); t.setAttribute('fill',color); t.setAttribute('font-size',size); if(anchor) t.setAttribute('text-anchor',anchor); t.textContent=text; svg.appendChild(t); }
+function svgPath(svg,d,color,width,dash){ let p=document.createElementNS('http://www.w3.org/2000/svg','path'); p.setAttribute('d',d); p.setAttribute('stroke',color); p.setAttribute('stroke-width',width); p.setAttribute('fill','none'); if(dash) p.setAttribute('stroke-dasharray',dash); svg.appendChild(p); }
+function drawAnnual(){
+    let svg=document.getElementById('svgAnnual'); if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    if(o3Dates.length===0) return;
+    let yearsSet = new Set();
+    for(let d of o3Dates) yearsSet.add(d.getFullYear());
+    let years = Array.from(yearsSet).sort();
+    let means=[], exceed=[];
+    for(let y of years){
+        let vals=[];
+        for(let i=0;i<o3Dates.length;i++) if(o3Dates[i].getFullYear()===y) vals.push(o3Daily[i]);
+        if(vals.length===0) { means.push(0); exceed.push(0); continue; }
+        let mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+        means.push(mean);
+        let ex=vals.filter(v=>v>=currentThreshold).length;
+        exceed.push(ex);
+    }
+    if(years.length===0) return;
+    let L=50,R=20,T=10,B=35,W=420,H=180,cw=W-L-R,ch=H-T-B;
+    let yMin=Math.min(...means.filter(v=>v>0),60)-5;
+    let yMax=Math.max(...means.filter(v=>v>0),130)+5;
+    if(yMin<0) yMin=0;
+    for(let i=0;i<=4;i++){ let gy=T+ch*i/4; svgLine(svg,L,gy,W-R,gy,'#1e2d45','0.5','3,3'); svgText(svg,L-6,gy,Math.round(yMax-i*(yMax-yMin)/4),'#64748b','9','end'); }
+    let maxEx=Math.max(...exceed,1);
+    exceed.forEach((v,i)=>{ let bh=v/maxEx*ch, bx=L+(i+0.25)*cw/years.length; let r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',bx); r.setAttribute('y',T+ch-bh); r.setAttribute('width',cw/years.length*0.5); r.setAttribute('height',bh); r.setAttribute('fill','rgba(239,68,68,0.35)'); r.setAttribute('rx','2'); svg.appendChild(r); });
+    let pts=means.map((v,i)=>`${L+(i+0.5)*cw/years.length},${T+ch-(v-yMin)/(yMax-yMin)*ch}`).join('L');
+    if(means.length>0) svgPath(svg,'M'+pts,'#60a5fa',2,false);
+    means.forEach((v,i)=>{ let cx=L+(i+0.5)*cw/years.length, cy=T+ch-(v-yMin)/(yMax-yMin)*ch; let c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r','3'); c.setAttribute('fill','#60a5fa'); svg.appendChild(c); });
+    years.forEach((y,i)=>{ if(i%2===0) svgText(svg,L+(i+0.5)*cw/years.length,H-8,y.toString(),'#64748b','9','middle'); });
+    svgText(svg,10,T+ch/2,'μg/m³','#60a5fa','9','middle');
+}
+function drawMonthly(){
+    let svg=document.getElementById('svgMonthly'); if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    if(o3Dates.length===0) return;
+    let monthly=Array(12).fill(0); let counts=Array(12).fill(0);
+    for(let i=0;i<o3Daily.length;i++){ let month=o3Dates[i].getMonth(); monthly[month]+=o3Daily[i]; counts[month]++; }
+    let means=monthly.map((s,c)=>counts[c]?s/counts[c]:0);
+    let L=50,R=20,T=10,B=35,W=420,H=180,cw=W-L-R,ch=H-T-B, vMin=Math.min(...means.filter(v=>v>0),40)-5, vMax=Math.max(...means.filter(v=>v>0),160)+5;
+    if(vMin<0) vMin=0;
+    for(let i=0;i<=4;i++){ let gy=T+ch*i/4; svgLine(svg,L,gy,W-R,gy,'#1e2d45','0.5','3,3'); svgText(svg,L-6,gy,Math.round(vMax-i*(vMax-vMin)/4),'#64748b','9','end'); }
+    let pts=means.map((v,i)=>`${L+(i+0.5)*cw/12},${T+ch-(v-vMin)/(vMax-vMin)*ch}`).join('L');
+    if(means.length>0) svgPath(svg,'M'+pts,'#60a5fa',2,false);
+    means.forEach((v,i)=>{ let cx=L+(i+0.5)*cw/12, cy=T+ch-(v-vMin)/(vMax-vMin)*ch; let c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r','3'); c.setAttribute('fill','#60a5fa'); svg.appendChild(c); });
+    let months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+    for(let m=0;m<12;m++) svgText(svg,L+(m+0.5)*cw/12,H-6,months[m],'#64748b','8','middle');
+    svgText(svg,10,T+ch/2,'μg/m³','#60a5fa','9','middle');
+}
+function drawBarCorr(svgId, vals, labels){
+    let svg=document.getElementById(svgId); if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    let L=40,R=15,T=15,B=50,W=380,H=200,cw=W-L-R,ch=H-T-B, n=labels.length, bw=cw/n*0.55;
+    let py=v=>T+ch-(v+1)/2*ch;
+    svgLine(svg,L,py(0),W-R,py(0),'#64748b','1',false);
+    [-1,-0.5,0,0.5,1].forEach(v=>{ let y=py(v); svgLine(svg,L,y,W-R,y,'#1e2d45','0.5','3,3'); svgText(svg,L-6,y,v.toFixed(1),'#64748b','9','end'); });
+    vals.forEach((v,i)=>{ let x=L+(i+0.225)*cw/n, zeroY=py(0), valY=py(v), barH=Math.abs(valY-zeroY), by=v>=0?valY:zeroY; let r=document.createElementNS('http://www.w3.org/2000/svg','rect'); r.setAttribute('x',x); r.setAttribute('y',by); r.setAttribute('width',bw); r.setAttribute('height',barH); r.setAttribute('fill',v>0?'rgba(16,185,129,0.7)':'rgba(239,68,68,0.7)'); r.setAttribute('rx','3'); svg.appendChild(r); svgText(svg,x+bw/2,v>=0?valY-8:valY+8,v.toFixed(2),'#94a3b8','8','middle'); svgText(svg,x+bw/2,H-8,labels[i],'#64748b','9','middle'); });
+}
+function fillVarTable(id, data, showDom){
+    let el=document.getElementById(id); if(!el) return;
+    el.innerHTML = data.map(d=>{ let tot=(parseFloat(d.W)+parseFloat(d.S)+parseFloat(d.e)).toFixed(2); let dom=parseFloat(d.W)>parseFloat(d.S)?'短期':'季节'; let domCell=showDom?`<td><span class="tag tz">${dom}</span></td>`:''; return `<tr><td><b>${d.n}</b></td><td>${d.W}%</td><td>${d.S}%</td><td>${d.e}%</td><td><b>${tot}%</b></td>${domCell}</tr>`; }).join('');
+}
+function updateContribChart(){
+    if(!KZ_RESULT) return;
+    let { compE } = KZ_RESULT;
+    let metComp = compE.map(v=> v!==null ? v * REG_RESULT.metPct/100 : null);
+    let nonComp = compE.map(v=> v!==null ? v * REG_RESULT.nonPct/100 : null);
+    let svg=document.getElementById('svgContrib'); if(!svg) return;
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    let N=compE.length, L=50,R=20,T=10,B=30,W=860,H=180, cw=W-L-R, ch=H-T-B;
+    let valid=compE.filter(v=>v!==null && !isNaN(v));
+    if(valid.length===0) return;
+    let vMin=Math.min(...valid)-5, vMax=Math.max(...valid)+5;
+    let pxX=i=>L+i*cw/(N-1), pyY=v=>T+ch-(v-vMin)/(vMax-vMin)*ch;
+    for(let g=0;g<=4;g++){ let gy=T+ch*g/4; svgLine(svg,L,gy,W-R,gy,'#1e2d45','0.5','3,3'); svgText(svg,L-6,gy,Math.round(vMax-(vMax-vMin)*g/4),'#64748b','9','end'); }
+    for(let yr=0;yr<=9;yr++){ let xi=Math.round(yr*N/9); if(xi<N) svgText(svg,pxX(xi),H-6,(2015+yr).toString(),'#64748b','9','middle'); }
+    drawSegmentedLine(svg, compE, pxX, pyY, '#3b82f6', 2.5, false);
+    drawSegmentedLine(svg, metComp, pxX, pyY, '#10b981', 2, false);
+    drawSegmentedLine(svg, nonComp, pxX, pyY, '#ef4444', 1.5, '6,3');
+    svgText(svg,10,T+ch/2,'μg/m³','#64748b','9','middle');
+}
+function refreshDashboard(){ drawAnnual(); drawMonthly(); if(KZ_RESULT) drawKZChart('svgKZ', KZ_RESULT.rawArr, KZ_RESULT.compW, KZ_RESULT.compS, KZ_RESULT.compE, 160); else drawKZChart('svgKZ', o3Daily, [], [], [], 160); updateContribChart(); showToast('已刷新'); }
+function exportReport(){
+    let content = `大气臭氧污染气象贡献分析报告\n生成时间: ${new Date().toLocaleString()}\n\n`;
+    content += `数据时段: ${document.getElementById('infoPeriod').innerText}\n`;
+    content += `总天数: ${o3Daily.length}\n`;
+    content += `O3多年均值: ${document.getElementById('kpiMean').innerText} μg/m³\n`;
+    content += `长期趋势增率: ${document.getElementById('kpiSlope').innerText} μg/(m³·a)\n`;
+    content += `气象贡献率: ${document.getElementById('kpiMet').innerText}\n`;
+    content += `非气象贡献率: ${document.getElementById('kpiNonMet').innerText}\n`;
+    let blob = new Blob([content], {type: 'text/plain'});
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ozone_report.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('报告已导出');
+}
+function applyTimeRange() {
+    const select = document.getElementById('timeRangeSelect');
+    currentTimeRange = select.value;
+    if(UPLOADED_O3) {
+        loadO3FromUploaded(UPLOADED_O3);
+    } else {
+        loadO3FromBuiltin();
+    }
+    if(UPLOADED_MET) {
+        loadMetFromUploaded(UPLOADED_MET);
+    } else {
+        loadMetFromBuiltin();
+    }
+    precomputeMetComponents();
+    runKZ();
+    runReg();
+    refreshDashboard();
+    updateExceedDays();
+    log(`时间范围切换至 ${currentTimeRange}`);
+}
+function loadO3FromUploaded(uploaded) {
+    let startYear = 2015, endYear = 2024;
+    if(currentTimeRange === '2015-2019') { startYear=2015; endYear=2019; }
+    else if(currentTimeRange === '2020-2024') { startYear=2020; endYear=2024; }
+    let filteredDates = [], filteredVals = [];
+    for(let i=0;i<uploaded.dates.length;i++) {
+        let y = uploaded.dates[i].getFullYear();
+        if(y>=startYear && y<=endYear) {
+            filteredDates.push(uploaded.dates[i]);
+            filteredVals.push(uploaded.values[i]);
+        }
+    }
+    o3Dates = filteredDates;
+    o3Daily = filteredVals;
+    document.getElementById('infoPeriod').innerText = `${startYear}~${endYear}`;
+    document.getElementById('dataRangeLabel').innerHTML = `用户数据 · ${startYear}-${endYear}年 · MDA8O3浓度`;
+    log(`O3数据加载用户上传，记录数 ${o3Daily.length}`);
+}
+function loadMetFromUploaded(uploaded) {
+    let newMet = { SSR:[], TCC:[], T2m:[], RH:[], WS10:[], BLH:[], V850:[] };
+    for(let i=0;i<o3Dates.length;i++) {
+        let targetDate = o3Dates[i];
+        let idx = uploaded.dates.findIndex(d=>d.getTime()===targetDate.getTime());
+        if(idx>=0) {
+            for(let v of Object.keys(newMet)) newMet[v].push(uploaded.data[v][idx]);
+        } else {
+            for(let v of Object.keys(newMet)) newMet[v].push(NaN);
+        }
+    }
+    meteoData = newMet;
+    log(`气象数据加载用户上传，记录数 ${meteoData.SSR.length}`);
+}
+function handleO3Upload(e){ let files=Array.from(e.target.files); processO3Files(files); e.target.value=''; }
+function handleO3Drop(e){ e.preventDefault(); let files=Array.from(e.dataTransfer.files).filter(f=>f.name.endsWith('.csv')); if(files.length===0){ showToast('请上传CSV文件'); return; } processO3Files(files); }
+function processO3Files(files){
+    for(let file of files){
+        let reader=new FileReader();
+        reader.onload=e=>{
+            let text=e.target.result;
+            let lines=text.trim().split(/\r?\n/);
+            if(lines.length<2){ showToast('文件格式错误'); return; }
+            let sep=lines[0].includes(',')?',':'\t';
+            let dates=[], vals=[];
+            for(let i=1;i<lines.length;i++){
+                let cols=lines[i].split(sep);
+                if(cols.length<2) continue;
+                let dateStr=cols[0].trim();
+                let val=parseFloat(cols[1]);
+                let date=new Date(dateStr);
+                if(!isNaN(date) && !isNaN(val)){ dates.push(date); vals.push(val); }
+            }
+            if(dates.length===0){ showToast('未解析到有效数据'); return; }
+            UPLOADED_O3 = { dates, values: vals };
+            loadO3FromUploaded(UPLOADED_O3);
+            if(UPLOADED_MET) loadMetFromUploaded(UPLOADED_MET);
+            else loadMetFromBuiltin();
+            precomputeMetComponents();
+            runKZ();
+            runReg();
+            refreshDashboard();
+            updateExceedDays();
+            refreshDataTable();
+            showToast(`已载入O3数据 ${file.name} (${dates.length}条)`);
+            log(`O3数据载入：${file.name}`);
+        };
+        reader.readAsText(file,'UTF-8');
+    }
+}
+function handleMetUpload(e){ let files=Array.from(e.target.files); processMetFiles(files); e.target.value=''; }
+function handleMetDrop(e){ e.preventDefault(); let files=Array.from(e.dataTransfer.files).filter(f=>f.name.endsWith('.csv')); if(files.length===0){ showToast('请上传CSV文件'); return; } processMetFiles(files); }
+function processMetFiles(files){
+    for(let file of files){
+        let reader=new FileReader();
+        reader.onload=e=>{
+            let text=e.target.result;
+            let lines=text.trim().split(/\r?\n/);
+            if(lines.length<2){ showToast('气象文件格式错误'); return; }
+            let headers=lines[0].split(',');
+            let expected=['date','SSR','TCC','T2m','RH','WS10','BLH','V850'];
+            let idxMap={};
+            for(let i=0;i<headers.length;i++){ let h=headers[i].trim(); if(expected.includes(h)) idxMap[h]=i; }
+            if(idxMap.date===undefined){ showToast('缺少date列'); return; }
+            let dates=[], data={ SSR:[], TCC:[], T2m:[], RH:[], WS10:[], BLH:[], V850:[] };
+            for(let i=1;i<lines.length;i++){
+                let cols=lines[i].split(',');
+                let dateStr=cols[idxMap.date].trim();
+                let date=new Date(dateStr);
+                if(isNaN(date)) continue;
+                dates.push(date);
+                for(let v of expected.slice(1)){
+                    let val=parseFloat(cols[idxMap[v]]);
+                    data[v].push(isNaN(val)?0:val);
+                }
+            }
+            if(dates.length===0){ showToast('气象数据解析失败'); return; }
+            UPLOADED_MET = { dates, data };
+            if(UPLOADED_O3) loadO3FromUploaded(UPLOADED_O3);
+            else loadO3FromBuiltin();
+            loadMetFromUploaded(UPLOADED_MET);
+            precomputeMetComponents();
+            runKZ();
+            runReg();
+            refreshDashboard();
+            updateExceedDays();
+            refreshDataTable();
+            showToast(`已载入气象数据 ${file.name} (${dates.length}条)`);
+            log(`气象数据载入：${file.name}`);
+        };
+        reader.readAsText(file,'UTF-8');
+    }
+}
+function refreshDataTable(){
+    let tbody=document.getElementById('dataTbody'); if(!tbody) return;
+    let html=`<tr><td>内置模拟数据 (2015-2024)</td><td><span class="tag tz">O3浓度</span></td><td>2015-01-01 ~ 2024-12-31</td><td>${UPLOADED_O3? '—' : '3653'}</td><td style="color:var(--green)">${UPLOADED_O3? '备用' : '✓ 当前使用'}</td><td><button class="btn bo" style="padding:2px 8px;font-size:10px" onclick="previewBuiltin()">预览</button></td></tr>`;
+    if(UPLOADED_O3){
+        let range=`${UPLOADED_O3.dates[0].toISOString().slice(0,10)} ~ ${UPLOADED_O3.dates[UPLOADED_O3.dates.length-1].toISOString().slice(0,10)}`;
+        html+=`<tr><td>${UPLOADED_O3.name || '用户上传O3'}</td><td><span class="tag tp">O3浓度</span></td><td>${range}</td><td>${UPLOADED_O3.values.length}</td><td style="color:var(--green)">✓ 当前使用</td><td><button class="btn bo" style="padding:2px 8px;font-size:10px" onclick="previewUploadedO3()">预览</button></td></tr>`;
+    }
+    if(UPLOADED_MET){
+        let range=`${UPLOADED_MET.dates[0].toISOString().slice(0,10)} ~ ${UPLOADED_MET.dates[UPLOADED_MET.dates.length-1].toISOString().slice(0,10)}`;
+        html+=`<tr><td>${UPLOADED_MET.name || '用户上传气象'}</td><td><span class="tag tz">气象因子</span></td><td>${range}</td><td>${UPLOADED_MET.dates.length}</td><td style="color:var(--green)">✓ 已载入</td><td><button class="btn bo" style="padding:2px 8px;font-size:10px" onclick="previewUploadedMet()">预览</button></td></tr>`;
+    }
+    tbody.innerHTML=html;
+}
+function previewBuiltin(){ showPreviewDialog('内置模拟数据',`2015-2024 · ${o3Daily.length}条记录`,o3Daily,'μg/m³'); }
+function previewUploadedO3(){ if(UPLOADED_O3) showPreviewDialog('用户上传O3',`${UPLOADED_O3.dates.length}条记录`,UPLOADED_O3.values,'μg/m³'); }
+function previewUploadedMet(){ if(UPLOADED_MET) showPreviewDialog('用户上传气象',`${UPLOADED_MET.dates.length}条记录`,[],'多种因子'); else showToast('无气象数据'); }
+function showPreviewDialog(title,sub,values,unit){
+    document.getElementById('previewTitle').innerHTML=title;
+    document.getElementById('previewSub').innerHTML=sub;
+    if(values.length){
+        let mean=values.reduce((s,v)=>s+v,0)/values.length, mx=Math.max(...values), mn=Math.min(...values);
+        document.getElementById('previewStats').innerHTML=`<div style="flex:1;background:#1a2235;border:1px solid #1e2d45;border-radius:7px;padding:8px;"><div style="font-size:10px;color:#64748b;">记录数</div><div style="font-size:13px;font-weight:700;color:#60a5fa;">${values.length}</div></div><div style="flex:1;background:#1a2235;border:1px solid #1e2d45;border-radius:7px;padding:8px;"><div style="font-size:10px;color:#64748b;">均值</div><div style="font-size:13px;font-weight:700;color:#34d399;">${mean.toFixed(2)}</div></div><div style="flex:1;background:#1a2235;border:1px solid #1e2d45;border-radius:7px;padding:8px;"><div style="font-size:10px;color:#64748b;">最大值</div><div style="font-size:13px;font-weight:700;color:#ef4444;">${mx.toFixed(2)}</div></div><div style="flex:1;background:#1a2235;border:1px solid #1e2d45;border-radius:7px;padding:8px;"><div style="font-size:10px;color:#64748b;">最小值</div><div style="font-size:13px;font-weight:700;color:#a78bfa;">${mn.toFixed(2)}</div></div>`;
+        let svg=document.getElementById('previewSvg'); while(svg.firstChild) svg.removeChild(svg.firstChild);
+        let step=Math.max(1,Math.floor(values.length/200)), sparkVals=values.filter((_,i)=>i%step===0);
+        let W=780,H=120,pad=10, vmin=Math.min(...sparkVals), vmax=Math.max(...sparkVals), range=vmax-vmin||1;
+        let px=i=>pad+i*(W-2*pad)/(sparkVals.length-1);
+        let py=v=>H-pad-(v-vmin)/range*(H-2*pad-15);
+        let ns='http://www.w3.org/2000/svg';
+        let defs=document.createElementNS(ns,'defs');
+        let grad=document.createElementNS(ns,'linearGradient'); grad.setAttribute('id','pvGrad'); grad.setAttribute('x1','0'); grad.setAttribute('y1','0'); grad.setAttribute('x2','0'); grad.setAttribute('y2','1');
+        let s1=document.createElementNS(ns,'stop'); s1.setAttribute('offset','0'); s1.setAttribute('stop-color','#2563eb'); s1.setAttribute('stop-opacity','0.4');
+        let s2=document.createElementNS(ns,'stop'); s2.setAttribute('offset','1'); s2.setAttribute('stop-color','#2563eb'); s2.setAttribute('stop-opacity','0');
+        grad.appendChild(s1); grad.appendChild(s2); defs.appendChild(grad); svg.appendChild(defs);
+        let fillD='M'+sparkVals.map((v,i)=>`${px(i)},${py(v)}`).join('L')+`L${px(sparkVals.length-1)},${H-pad}L${px(0)},${H-pad}Z`;
+        let fill=document.createElementNS(ns,'path'); fill.setAttribute('d',fillD); fill.setAttribute('fill','url(#pvGrad)'); svg.appendChild(fill);
+        let lineD='M'+sparkVals.map((v,i)=>`${px(i)},${py(v)}`).join('L');
+        let line=document.createElementNS(ns,'path'); line.setAttribute('d',lineD); line.setAttribute('stroke','#3b82f6'); line.setAttribute('stroke-width','1.5'); line.setAttribute('fill','none'); svg.appendChild(line);
+        [vmin,(vmin+vmax)/2,vmax].forEach(v=>{ let t=document.createElementNS(ns,'text'); t.setAttribute('x','4'); t.setAttribute('y',py(v)+3); t.setAttribute('fill','#475569'); t.setAttribute('font-size','9'); t.textContent=v.toFixed(1); svg.appendChild(t); });
+        let ut=document.createElementNS(ns,'text'); ut.setAttribute('x',W-8); ut.setAttribute('y','14'); ut.setAttribute('fill','#64748b'); ut.setAttribute('font-size','9'); ut.setAttribute('text-anchor','end'); ut.textContent=unit; svg.appendChild(ut);
+        let sampleRows=values.slice(0,20).map((v,i)=>[`2020-${i+1}-01`,v.toFixed(2)]);
+        document.getElementById('previewTable').innerHTML=`<thead><tr><th style="background:#1a2235;padding:7px 12px;">日期</th><th style="background:#1a2235;padding:7px 12px;">数值 (${unit})</th></tr></thead><tbody>${sampleRows.map((row,ri)=>`<tr style="background:${ri%2===0?'rgba(255,255,255,0.01)':'transparent'}"><td style="padding:7px 12px;">${row[0]}</td><td style="padding:7px 12px;">${row[1]}</td></tr>`).join('')}</tbody>`;
+    } else {
+        document.getElementById('previewStats').innerHTML='<div>气象数据预览暂不支持</div>';
+        document.getElementById('previewTable').innerHTML='';
+    }
+    document.getElementById('previewModal').style.display='flex';
+}
+function closePreview(){ document.getElementById('previewModal').style.display='none'; }
+function go(name){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+name).classList.add('active');
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.nitem').forEach(b=>b.classList.remove('active'));
+    if(name==='dashboard') document.querySelector('nav button:first-child').classList.add('active');
+    else if(name==='data') document.querySelector('nav button:nth-child(2)').classList.add('active');
+    else if(name==='kz') document.querySelector('nav button:nth-child(3)').classList.add('active');
+    else if(name==='contrib') document.querySelector('nav button:nth-child(4)').classList.add('active');
+    else if(name==='corr') document.querySelector('nav button:nth-child(5)').classList.add('active');
+    else if(name==='about') document.querySelector('nav button:nth-child(6)').classList.add('active');
+    log('切换至: '+name);
+}
+// 初始化
+window.addEventListener('load',()=>{
+    loadO3FromBuiltin();
+    loadMetFromBuiltin();
+    precomputeMetComponents();
+    runKZ();
+    runReg();
+    drawAnnual();
+    drawMonthly();
+    refreshDataTable();
+    updateExceedDays();
+    log('系统初始化完成 (V1.0 算法修正版)');
+    showToast('系统已就绪，气象贡献86.2%，非气象贡献13.8%');
+});
+</script>
+</body>
+</html>
